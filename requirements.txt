@@ -1,0 +1,5 @@
+langchain
+openai
+dotenv
+pydantic
+chromadb
