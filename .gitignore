@@ -1,0 +1,5 @@
+__pycache__
+.gitattributes
+botenv.env
+.chroma/
+chroma_logs.log
