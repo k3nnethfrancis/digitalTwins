@@ -1,17 +1,8 @@
 import langchain
 from langchain import OpenAI, LLMChain, PromptTemplate
 from langchain.memory import ConversationBufferWindowMemory, ConversationBufferMemory
-from langchain.agents import Tool
-from langchain.memory import ConversationBufferMemory
-from langchain.chat_models import ChatOpenAI
-from langchain.agents import initialize_agent
-from langchain.agents import AgentType
-from langchain import OpenAI, LLMChain, PromptTemplate
-from langchain.memory import ConversationBufferWindowMemory
-from src.config import username, personality, rules, init_plan, twin_instructions
-from src.chains import initialize_chain, initialize_meta_chain, initialize_revise_chain, get_chat_history
-
-from langchain.chat_models import ChatOpenAI
+from src.config import username, personality, rules, initPlan, twinInstructions
+from src.chains import initialize_chain, initialize_meta_chain, initialize_revise_chain, get_chat_history, get_formatted_chat_history
 
 from dotenv import load_dotenv
 import os
@@ -26,58 +17,75 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 
 def main(user_input, inner_loop_iters=1, max_chat_iters=5, verbose=False, debug_mode=False):
-    # init variable assignment
-    langchain.debug = debug_mode # debug mode shows all langchain outputs
-    twin = username # twins name
-    instructions = twin_instructions # instruction prompt for twin
-    twin_memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True, ai_prefix=twin) # initilize the conversation memory buffer. This stores chat history and returns messages when requested.
-    full_history = ConversationBufferMemory(memory_key="reflect_history", return_messages=True, ai_prefix=twin)
-    chain = initialize_chain(instructions) # initialize the initial conversation chain
+    
+    langchain.debug = debug_mode
+    twin = username
+    instructions = twinInstructions
 
-    # print(
-    #     f'''MEMORY STATE 0: {twin_memory.chat_memory}'''
-    # )
-
-    # print(f'Human: {user_input}') # print the users message
-
-    #output = chain.predict(human_input=user_input, history=twin_memory) # assign the output to a var and include memory for the convo
+    twin_memory = ConversationBufferWindowMemory(
+        memory_key="chat_history", 
+        return_messages=True, 
+        ai_prefix=twin
+    )
+    twin_propose_memory = ConversationBufferWindowMemory(
+        memory_key="chat_history", 
+        return_messages=True, 
+        ai_prefix=twin
+    )
+    full_history = ConversationBufferWindowMemory(
+        memory_key="full_history", 
+        return_messages=True, 
+        ai_prefix=twin
+        )
+    # initialize the initial conversation chain
+    chain = initialize_chain(
+        instructions, 
+        memory=twin_memory
+    )
+    propose_chain = initialize_chain(
+        instructions,
+        memory=twin_propose_memory
+    ) # initialize the initial conversation chain
     output = chain.predict(human_input=user_input) # assign the output to a var and include memory for the convo
-    twin_memory.save_context({"Human": user_input}, {twin: output})    
+    
     full_history.save_context({"Human": user_input}, {twin: output})
+    twin_propose_memory.save_context({"Human": user_input}, {twin: output})
+
     if verbose:
         #print the twins output
         print(f'{twin}: {output} [END TWIN 1]') # print the first twin response
         print()
         print(
-            f'''MEMORY STATE 1: {twin_memory.chat_memory}'''
+            f'''---\nMEM STATE 1:\n{get_formatted_chat_history(chain.memory)}\n---'''
         )
         print()
-        print('...starting conversation loop...')
-        #mem = []
+        print('...INITIALIZING CONVERATION LOOP...')
         
         ## this kicks off the first query to the twin that it will self reflect about before answering
         for i in range(max_chat_iters):
             print(f'[Iter {i+1}/{max_chat_iters}]')
             
             human_input = input() # get input from the human user
-            # print(f'Human: {human_input} [END HUMAN 1]') # print the users message
-            twin_memory.chat_memory.add_user_message(human_input)
             print()
-            # history = memory
-            # history.save_context({"Human": human_input}, {twin: proposed_output})
             print(
-                f'''MEMORY STATE 2: {twin_memory.chat_memory}'''
+                f'''---\nMEM STATE 2:\n{get_formatted_chat_history(chain.memory)}\n---'''
             )   
             print()
             print('...INITIALIZING INNER SELF-REFLECTION LOOP...')
+
             for j in range(inner_loop_iters):
                 print(f'(Step {j+1}/{inner_loop_iters})')
                 print()
-                proposed_output = chain.predict(human_input=human_input)
+                proposed_output = propose_chain.predict(
+                                        human_input=human_input,
+                                        chat_history=get_formatted_chat_history(propose_chain.memory)
+                )
+
                 full_history.chat_memory.add_user_message(human_input)
-                #full_history.save_context({"Human": human_input}, {twin: proposed_output})
+                twin_memory.chat_memory.add_user_message(human_input)
+
                 print(
-                    f'''MEMORY STATE 3: {twin_memory.chat_memory}'''
+                    f'''MEM STATE 3:\n{get_formatted_chat_history(chain.memory)}\n---'''
                 )
                 
                 print(f'{twin} [proposed response]: {proposed_output} [END TWIN 3]')
@@ -85,19 +93,20 @@ def main(user_input, inner_loop_iters=1, max_chat_iters=5, verbose=False, debug_
                 print(
                     f'''HISTORY STATE 2: {full_history.chat_memory}'''
                 )
+                print()
                 # The AI reflects on its performance using the meta chain
-                meta_chain = initialize_meta_chain(personality=personality, rules=rules) # inject the twins personality and rules for the simulation
-                meta_output = meta_chain.predict(chat_history=get_chat_history(chain.memory)) # assign the output to a var with memory
+                meta_chain = initialize_meta_chain(personality=personality, rules=rules, memory=full_history) # inject the twins personality and rules for the simulation
+                meta_output = meta_chain.predict(chat_history=get_formatted_chat_history(meta_chain.memory)) # assign the output to a var with memory
                 print(f'{twin} [self-reflection]: {meta_output} [END REFLECTION 1]')
                 print(
-                    f'''MEMORY STATE 4: {twin_memory.chat_memory}'''
+                    f'''MEMORY STATE 4:\n{get_formatted_chat_history(chain.memory)}\n---'''
                 ) 
                 print()
                 
                 # initialize the revise chain
-                revise_chain = initialize_revise_chain(memory=full_history)
+                revise_chain = initialize_revise_chain()
                 #revision = revise_chain.predict(chat_history=get_chat_history(chain.memory), meta_reflection=meta_output, proposed_response=proposed_output) # include history and the meta reflection output
-                revision = revise_chain.predict(chat_history=get_chat_history(chain.memory), meta_reflection=meta_output, proposed_response=proposed_output) # include history and the meta reflection output
+                revision = revise_chain.predict(chat_history=get_formatted_chat_history(chain.memory), meta_reflection=meta_output, proposed_response=proposed_output) # include history and the meta reflection output
                 # print(f'{twin} [revised response]: {revision} [END REVISION 1]')
                 print(f'{twin}: {revision} [END REVISION 1]')
                 print()
@@ -108,7 +117,7 @@ def main(user_input, inner_loop_iters=1, max_chat_iters=5, verbose=False, debug_
                 twin_memory.chat_memory.add_ai_message(revision)
                 #memory.save_context({"Human": human_input}, {twin: revision})
                 print(
-                    f'''MEMORY STATE 5: {twin_memory.chat_memory}'''
+                    f'''MEMORY STATE 5:\n{get_formatted_chat_history(chain.memory)}\n---'''
                 ) 
                 print()
                 #mem.append(revision)
