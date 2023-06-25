@@ -3,3 +3,4 @@ __pycache__
 botenv.env
 .chroma/
 chroma_logs.log
+*db/
