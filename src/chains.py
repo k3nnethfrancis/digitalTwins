@@ -1,6 +1,5 @@
 import langchain
 from langchain import OpenAI, LLMChain, PromptTemplate
-from langchain.memory import ConversationBufferWindowMemory, ConversationBufferMemory
 from langchain.chat_models import ChatOpenAI
 from dotenv import load_dotenv
 import os
@@ -88,13 +87,7 @@ def get_chat_history(chain_memory):
     chat_history = chain_memory.load_memory_variables(memory_key)[memory_key]
     return chat_history
 
-# # Function to extract the new instructions for the twin from the meta-interaction output
-# def get_new_instructions(meta_output):
-#     delimiter = 'Instructions: '
-#     new_instructions = meta_output[meta_output.find(delimiter)+len(delimiter):]
-#     return new_instructions
-
-# Function to fetch the chat history from the chain memory
+# Function to format the chat history in readible form from the chain memory
 def get_formatted_chat_history(chain_memory):
     chat_history = chain_memory.chat_memory.messages
     
@@ -117,13 +110,12 @@ def initialize_revise_chain():
     revise_template = """Consider the following conversation and reflection on the proceeding message: 
     Chat History:
     {chat_history}
-    ####
-    Next response: {proposed_response}
+    Twin [proposed]: {proposed_response}
     Reflection: {meta_reflection}
     ####
     
     YOUR INSTRUCTIONS:
-    Revise the response based on the reflection. 
+    Revise the Twin's proposed response based on the reflection below it. 
     If the reflection suggests the personality is internally consistent, your revision should be a word for word copy of the next response, including emojis.
     If the reflection suggests the next response breaks the rules, revise the response.
     ONLY RESPONSE WITH YOUR REVISION OF THE NEXT RESPONSE OR A PERFECT COPY PASTE.

@@ -56,7 +56,7 @@ def main(user_input, inner_loop_iters=1, max_chat_iters=5, verbose=False, debug_
         print(f'{twin}: {output} [END TWIN 1]') # print the first twin response
         print()
         print(
-            f'''---\nMEM STATE 1:\n{get_formatted_chat_history(chain.memory)}\n---'''
+            f'''---\nMEM STATE 0:\n{get_formatted_chat_history(chain.memory)}\n---'''
         )
         print()
         print('...INITIALIZING CONVERATION LOOP...')
@@ -68,7 +68,7 @@ def main(user_input, inner_loop_iters=1, max_chat_iters=5, verbose=False, debug_
             human_input = input() # get input from the human user
             print()
             print(
-                f'''---\nMEM STATE 2:\n{get_formatted_chat_history(chain.memory)}\n---'''
+                f'''---\nMEM STATE {i}:\n{get_formatted_chat_history(chain.memory)}\n---'''
             )   
             print()
             print('...INITIALIZING INNER SELF-REFLECTION LOOP...')
@@ -85,13 +85,13 @@ def main(user_input, inner_loop_iters=1, max_chat_iters=5, verbose=False, debug_
                 twin_memory.chat_memory.add_user_message(human_input)
 
                 print(
-                    f'''MEM STATE 3:\n{get_formatted_chat_history(chain.memory)}\n---'''
+                    f'''MEM STATE {j+2}:\n{get_formatted_chat_history(chain.memory)}\n---'''
                 )
                 
                 print(f'{twin} [proposed response]: {proposed_output} [END TWIN 3]')
                 print()
                 print(
-                    f'''HISTORY STATE 2: {full_history.chat_memory}'''
+                    f'''HISTORY STATE {j}: {full_history.chat_memory}'''
                 )
                 print()
                 # The AI reflects on its performance using the meta chain
@@ -99,7 +99,7 @@ def main(user_input, inner_loop_iters=1, max_chat_iters=5, verbose=False, debug_
                 meta_output = meta_chain.predict(chat_history=get_formatted_chat_history(meta_chain.memory)) # assign the output to a var with memory
                 print(f'{twin} [self-reflection]: {meta_output} [END REFLECTION 1]')
                 print(
-                    f'''MEMORY STATE 4:\n{get_formatted_chat_history(chain.memory)}\n---'''
+                    f'''MEMORY STATE {j+3}:\n{get_formatted_chat_history(chain.memory)}\n---'''
                 ) 
                 print()
                 
@@ -117,7 +117,7 @@ def main(user_input, inner_loop_iters=1, max_chat_iters=5, verbose=False, debug_
                 twin_memory.chat_memory.add_ai_message(revision)
                 #memory.save_context({"Human": human_input}, {twin: revision})
                 print(
-                    f'''MEMORY STATE 5:\n{get_formatted_chat_history(chain.memory)}\n---'''
+                    f'''MEMORY STATE {j+4}:\n{get_formatted_chat_history(chain.memory)}\n---'''
                 ) 
                 print()
                 #mem.append(revision)
