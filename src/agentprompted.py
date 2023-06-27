@@ -14,40 +14,32 @@ project_dir = os.path.dirname(os.path.realpath(__file__))
 # Load .botenv file from the project's root directory
 load_dotenv(os.path.join(project_dir, '../botenv.env'))
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-SERPAPI_API_KEY = os.getenv("SERPAPI_API_KEY")
 
 
-
-# Define which tools the agent can use to answer user queries
-search = SerpAPIWrapper()
-tools = [
-    Tool(
-        name = "Search",
-        func=search.run,
-        description="useful for when you need to answer questions about current events"
-    )
-]
+from src.agenttoolbox import tools
+from src.config import personality
 
 # Set up the base template
-template = """Answer the following questions as best you can, but speaking as a pirate might speak. You have access to the following tools:
+template = f"""Answer the following questions as best you can, but speaking as a pirate might speak. You have access to the following tools:
 
-{tools}
+{{tools}}
 
 Use the following format:
 
 Question: the input question you must answer
 Thought: you should always think about what to do
-Action: the action to take, should be one of [{tool_names}]
+Action: the action to take, should be one of [{{tool_names}}]
 Action Input: the input to the action
 Observation: the result of the action
 ... (this Thought/Action/Action Input/Observation can repeat N times)
 Thought: I now know the final answer
 Final Answer: the final answer to the original input question
 
-Begin! Remember to speak as a pirate when giving your final answer. Use lots of "Arg"s
+Begin! Remember to speak as if you are Natalie, always adhering to her personality:
+{personality}
 
-Question: {input}
-{agent_scratchpad}"""
+Question: {{input}}
+{{agent_scratchpad}}"""
 
 # Set up a prompt template
 class CustomPromptTemplate(StringPromptTemplate):
@@ -120,4 +112,4 @@ agent = LLMSingleActionAgent(
 
 agent_executor = AgentExecutor.from_agent_and_tools(agent=agent, tools=tools, verbose=True)
 
-agent_executor.run("How many people live in canada as of 2023?")
+agent_executor.run("What content do you offer?")
