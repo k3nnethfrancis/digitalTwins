@@ -12,9 +12,10 @@ project_dir = os.getcwd()
 # Load .botenv file from the project's root directory
 load_dotenv(os.path.join(project_dir, 'botenv.env'))
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-model = "gpt-4-0613"
+gpt4 = "gpt-4"
+gpt35 = "gpt-3.5-turbo"
 
-verbose = True
+verbose = False
 
 # Function to initialize the chain for creating chat interactions, using a given set of instructions and memory
 def initialize_chain(instructions, memory):
@@ -33,7 +34,7 @@ def initialize_chain(instructions, memory):
     )
 
     chain = LLMChain(
-        llm=ChatOpenAI(openai_api_key=OPENAI_API_KEY, temperature=0.5, model_name=model), 
+        llm=ChatOpenAI(openai_api_key=OPENAI_API_KEY, temperature=0.8, model_name=gpt4), 
         prompt=prompt, 
         verbose=verbose,
         # memory=ConversationBufferMemory(),
@@ -47,8 +48,6 @@ def initialize_meta_chain(personality, rules, memory):
     meta_template=f"""
     The following Chat Log displays the convesations between an AI digital twin agent named {username} and a Human. The Twin tried to be a realistic simulation.
         
-    ####
-    ####
     CHAT LOG:
     {{full_history}}
     ####
@@ -57,11 +56,12 @@ def initialize_meta_chain(personality, rules, memory):
     ####
     {rules}
     ####
-    ####
 
     YOUR INSTRUCTIONS:
-    Reflect on the latest message in the chat log. Does it adhere to the personality and rules of the simulation? Explain your thoughts.
-    If you have critques, provide suggestions for better adherence / simulation fidelity, but do not revise the response. Keep your answer concise.
+    Reflect on the latest message in the chat log. 
+    Does the response fit {username}'s personality?
+    Does it break the rules of the simulation?
+    ####
 
     REFLECTION:
     """
@@ -74,7 +74,7 @@ def initialize_meta_chain(personality, rules, memory):
     )
 
     meta_chain = LLMChain(
-        llm=ChatOpenAI(openai_api_key=OPENAI_API_KEY, temperature=0.1, model_name=model),
+        llm=ChatOpenAI(openai_api_key=OPENAI_API_KEY, temperature=0.3, model_name=gpt4, max_tokens=150),
         prompt=meta_prompt, 
         verbose=verbose,
         # memory=ConversationBufferWindowMemory(),
@@ -114,21 +114,27 @@ def get_formatted_chat_history(chain_memory):
 # def initialize_revise_chain(memory):
 def initialize_revise_chain():
     
-    revise_template = """Consider the following conversation and and reflection on the last message: 
+    revise_template = """Consider the following conversation and reflection on the proceeding message: 
     Chat History:
     {chat_history}
     ####
-    Proposed Response: {proposed_response}
+    Next response: {proposed_response}
     Reflection: {meta_reflection}
     ####
-    Please revise the proposed response given the reflection below it. If the reflection does not constitute a revision of the proposed response, return the proposed response ONLY. DO NOT WRAP THE RESPONSE IN QUOTATIONS.
+    
+    YOUR INSTRUCTIONS:
+    Revise the response based on the reflection. 
+    If the reflection suggests the personality is internally consistent, your revision should be a word for word copy of the next response, including emojis.
+    If the reflection suggests the next response breaks the rules, revise the response.
+    ONLY RESPONSE WITH YOUR REVISION OF THE NEXT RESPONSE OR A PERFECT COPY PASTE.
+    ####
     Revision: """
     revise_prompt = PromptTemplate(
         input_variables=["chat_history", "proposed_response", "meta_reflection"],
         template=revise_template,
     )
     revision_chain = LLMChain(
-        llm=ChatOpenAI(openai_api_key=OPENAI_API_KEY, temperature=0.4, model_name=model),
+        llm=ChatOpenAI(openai_api_key=OPENAI_API_KEY, temperature=0.8, model_name=gpt4),
         prompt=revise_prompt,
         verbose=verbose,
         # memory=memory
