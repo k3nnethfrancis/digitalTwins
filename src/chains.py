@@ -33,7 +33,11 @@ def initialize_chain(instructions, memory):
     )
 
     chain = LLMChain(
-        llm=ChatOpenAI(openai_api_key=OPENAI_API_KEY, temperature=0.8, model_name=gpt4), 
+        llm=ChatOpenAI(
+            openai_api_key=OPENAI_API_KEY, 
+            temperature=0.8, 
+            model_name=gpt4
+            ), 
         prompt=prompt, 
         verbose=verbose,
         # memory=ConversationBufferMemory(),
@@ -73,7 +77,11 @@ def initialize_meta_chain(personality, rules, memory):
     )
 
     meta_chain = LLMChain(
-        llm=ChatOpenAI(openai_api_key=OPENAI_API_KEY, temperature=0.3, model_name=gpt4, max_tokens=150),
+        llm=ChatOpenAI(
+            openai_api_key=OPENAI_API_KEY,
+            temperature=0.3,
+            model_name=gpt4, 
+            ),
         prompt=meta_prompt, 
         verbose=verbose,
         # memory=ConversationBufferWindowMemory(),
@@ -126,7 +134,11 @@ def initialize_revise_chain():
         template=revise_template,
     )
     revision_chain = LLMChain(
-        llm=ChatOpenAI(openai_api_key=OPENAI_API_KEY, temperature=0.8, model_name=gpt4),
+        llm=ChatOpenAI(
+            openai_api_key=OPENAI_API_KEY, 
+            temperature=0.8, 
+            model_name=gpt4
+            ),
         prompt=revise_prompt,
         verbose=verbose,
         # memory=memory
