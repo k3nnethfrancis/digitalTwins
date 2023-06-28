@@ -19,6 +19,8 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 from src.agenttoolbox import tools
 from src.config import personality
+from src.vectortools import docsearch, latest_work_db
+
 
 # Set up the base template
 template = f"""Answer the following questions as best you can. You have access to the following tools:
@@ -119,10 +121,15 @@ def initialize_agent(llm=llm, prompt=prompt, tools=tools):
 
 print('initializing agent...')
 my_agent = initialize_agent()
-print('...enter a query.')
+print('...enter a query:')
 for i in range(10):
     human_input = input()
     response = my_agent.run(human_input)
     print()
     print(f'Human: {human_input}')
     print(f'Agent: {response}')
+
+# clean up and delete chroma vectorstores (???)
+vectorstores = [docsearch, latest_work_db]
+for vectordb in vectorstores:
+    vectordb = None
