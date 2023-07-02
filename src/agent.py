@@ -16,10 +16,12 @@ project_dir = os.path.dirname(os.path.realpath(__file__))
 load_dotenv(os.path.join(project_dir, '../botenv.env'))
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-
 from src.agenttoolbox import tools
 from src.config import personality
 from src.vectortools import docsearch, latest_work_db
+
+import langchain
+langchain.debug=True
 
 
 # Set up the base template
@@ -30,8 +32,8 @@ template = f"""Answer the following questions as best you can. You have access t
 Use the following format:
 
 Question: the input question you must answer
-Thought: you should always think about what to do
-Action: the action to take, should be one of [{{tool_names}}]
+Thought: you should always think about what to do. Either you need to use a tool or you don't.
+Action: the action to take, should be one of [{{tool_names}}]. Use the CHAT tool when no other tools are needed.
 Action Input: the input to the action
 Observation: the result of the action
 ... (this Thought/Action/Action Input/Observation can repeat N times)
@@ -100,7 +102,8 @@ class CustomOutputParser(AgentOutputParser):
 output_parser = CustomOutputParser()
 llm = ChatOpenAI(
     temperature=0.0,
-    model_name='gpt-4')
+    model_name='gpt-4'
+    )
 
 def initialize_agent(llm=llm, prompt=prompt, tools=tools):
     

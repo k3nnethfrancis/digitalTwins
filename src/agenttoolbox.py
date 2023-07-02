@@ -9,6 +9,8 @@ import re
 from dotenv import load_dotenv
 import os
 
+from src.chains import initialize_chain
+
 # Get the current project directory
 project_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -17,13 +19,29 @@ load_dotenv(os.path.join(project_dir, '../botenv.env'))
 
 SERPAPI_API_KEY = os.getenv("SERPAPI_API_KEY")
 
+from src.config import twinInstructions
+from langchain.memory import ConversationBufferWindowMemory
+twin_memory = ConversationBufferWindowMemory(
+        memory_key="chat_history", 
+        return_messages=True, 
+        ai_prefix='AI'
+    )
 
+chain = initialize_chain(
+    instructions=twinInstructions,
+    memory=twin_memory
+)
 
 # Define which tools the agent can use to answer user queries
 search = SerpAPIWrapper()
 tools = [
     Tool(
-        name = "WEB SEARCH",
+        name="CHAT",
+        func=chain.run,
+        description="the default tool to use when no other tool is necessary. just regular conversation."
+    ),
+    Tool(
+        name="WEB SEARCH",
         func=search.run,
         description="useful for when you need to answer generic questions about current events, not specific to Natalie."
     ),
