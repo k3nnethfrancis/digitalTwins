@@ -7,7 +7,8 @@ This repo experiments with the idea of digital twins. AI simulations of a specif
 2. `cd` into the cloned repository
 3. Install the requirements with `pip install -r requirements.txt`
 4. Update the `.env.example` file to be named `botenv.env` and enter your openAI and SERP api keys
-5. You are now ready to run one of several test scripts:
+5. Run `python -m src.vectortools` to process and store document embeddings.
+6. You are now ready to run one of several test scripts:
 
 ### Conversational Twin
 The basic form of the digital twin the self reflects on the response before pushing the response to the user, updating if it doesn't align with the personality or rules of the simulation.
