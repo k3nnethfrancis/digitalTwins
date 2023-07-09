@@ -12,20 +12,19 @@ from dotenv import load_dotenv
 import os
 
 # Get the current project directory
-project_dir = os.path.dirname(os.path.realpath(__file__))
+THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 
 # Load .botenv file from the project's root directory
-load_dotenv(os.path.join(project_dir, '../botenv.env'))
+load_dotenv(os.path.join(THIS_DIR, '../bot.env'))
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 # Define the path to the document
 DOC_PATH = str(Path(".").resolve() / "docs" / "infos.txt")
 
 def load_api_key():
     # Get the current project directory
-    project_dir = os.path.dirname(os.path.realpath(__file__))
-
+    THIS_DIR = os.path.dirname(os.path.realpath(__file__))
     # Load .botenv file from the project's root directory
-    load_dotenv(os.path.join(project_dir, '../botenv.env'))
+    load_dotenv(os.path.join(THIS_DIR, '../bot.env'))
     return os.getenv("OPENAI_API_KEY")
 
 def create_text_splitter():

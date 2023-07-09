@@ -8,8 +8,8 @@ from src.config import username
 # Get the current project directory
 project_dir = os.getcwd()
 
-# Load .botenv file from the project's root directory
-load_dotenv(os.path.join(project_dir, 'botenv.env'))
+# Load .env file from the project's root directory
+load_dotenv(os.path.join(project_dir, 'bot.env'))
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 gpt4 = "gpt-4"
 gpt35 = "gpt-3.5-turbo"

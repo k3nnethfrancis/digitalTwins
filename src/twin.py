@@ -10,8 +10,8 @@ import os
 # Get the current project directory
 project_dir = os.path.dirname(os.path.realpath(__file__))
 
-# Load .botenv file from the project's root directory
-load_dotenv(os.path.join(project_dir, '../botenv.env'))
+# Load .env file from the project's root directory
+load_dotenv(os.path.join(project_dir, '../bot.env'))
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 

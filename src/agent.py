@@ -4,7 +4,7 @@ from pathlib import Path
 
 # load env vars
 THIS_DIR = os.path.dirname(os.path.realpath(__file__))
-load_dotenv(os.path.join(THIS_DIR, '../botenv.env'))
+load_dotenv(os.path.join(THIS_DIR, '../bot.env'))
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 DOC_PATH = str(Path(".").resolve() / "docs" / "infos.txt")
 
