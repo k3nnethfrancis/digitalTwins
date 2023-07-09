@@ -1,80 +1,61 @@
-#### CREATE VECTORSTORE
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.llms import OpenAI
-from langchain.chains import RetrievalQA, RetrievalQAWithSourcesChain
+from langchain.chains import RetrievalQA
+from dotenv import load_dotenv
+import os
+from langchain.document_loaders import TextLoader, WebBaseLoader
+from pathlib import Path
+
 from dotenv import load_dotenv
 import os
 
 # Get the current project directory
-project_dir = os.path.dirname(os.path.realpath(__file__))
+THIS_DIR = os.path.dirname(os.path.realpath(__file__))
 
 # Load .botenv file from the project's root directory
-load_dotenv(os.path.join(project_dir, '../botenv.env'))
+load_dotenv(os.path.join(THIS_DIR, '../bot.env'))
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+# Define the path to the document
+DOC_PATH = str(Path(".").resolve() / "docs" / "infos.txt")
 
-llm = OpenAI(temperature=0)
+def load_api_key():
+    # Get the current project directory
+    THIS_DIR = os.path.dirname(os.path.realpath(__file__))
+    # Load .botenv file from the project's root directory
+    load_dotenv(os.path.join(THIS_DIR, '../bot.env'))
+    return os.getenv("OPENAI_API_KEY")
 
+def create_text_splitter():
+    return CharacterTextSplitter(
+        chunk_size=1000,
+        chunk_overlap=0
+    )
 
-from pathlib import Path
+def process_documents(loader_class, doc_path, collection_name, persist_directory):
+    loader = loader_class(doc_path)
+    documents = loader.load()
+    text_splitter = create_text_splitter()
+    texts = text_splitter.split_documents(documents)
+    embeddings = OpenAIEmbeddings()
+    db = Chroma.from_documents(
+        texts,
+        embeddings,
+        collection_name=collection_name,
+        persist_directory=persist_directory
+    )
+    retriever = db.as_retriever()
+    llm = OpenAI(api_key=load_api_key(), temperature=0)
+    chain = RetrievalQA.from_chain_type(
+        llm=llm, 
+        chain_type="stuff", 
+        retriever=retriever
+    )
+    db.persist()
+    return db, retriever, chain
 
-relevant_parts = []
-for p in Path(".").absolute().parts:
-    relevant_parts.append(p)
-    if relevant_parts[-3:] == ["langchain", "docs", "modules"]:
-        break
-doc_path = str(Path(*relevant_parts) / "docs//infos.txt")
-
-print(doc_path)
-
-from langchain.document_loaders import TextLoader
-
-loader = TextLoader(doc_path)
-documents = loader.load()
-text_splitter = CharacterTextSplitter(
-    chunk_size=1000,
-    chunk_overlap=0
-)
-texts = text_splitter.split_documents(documents)
-
-embeddings = OpenAIEmbeddings()
-docsearch = Chroma.from_documents(
-    texts,
-    embeddings,
-    collection_name="infos",
-    persist_directory="./db/infos"
-)
-infos_retriever = docsearch.as_retriever()
-infos = RetrievalQA.from_chain_type(
-    llm=llm, 
-    chain_type="stuff", 
-    retriever=infos_retriever
-)
-# persist chromadb and save to disk
-docsearch.persist()
-
-##### WEB LOADER ####
-from langchain.document_loaders import WebBaseLoader
-
-loader = WebBaseLoader("https://www.k3nnethfrancis.com/gpt-out-of-the-box/")
-
-docs = loader.load()
-
-
-latest_work_texts = text_splitter.split_documents(docs)
-latest_work_db = Chroma.from_documents(
-    latest_work_texts,
-    embeddings,
-    collection_name="latest",
-    persist_directory="./db/latest"
-)
-latest_work_retriever = latest_work_db.as_retriever()
-latest_work = RetrievalQA.from_chain_type(
-    llm=llm, 
-    chain_type="stuff", 
-    retriever=latest_work_retriever
-)
-
-# persist chromadb and save to disk
-latest_work_db.persist()
+# This will only run if the script is run directly (not when imported)
+if __name__ == '__main__':
+    info_db, info_retriever, info_chain = process_documents(TextLoader, DOC_PATH, 'infos', './db/infos')
+    #db2, retriever2 = process_documents(WebBaseLoader, "https://www.k3nnethfrancis.com/gpt-out-of-the-box/", 'latest', './db/latest')
