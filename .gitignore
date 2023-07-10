@@ -1,6 +1,6 @@
 __pycache__
 .gitattributes
-botenv.env
+bot.env
 .chroma/
 chroma_logs.log
 *db/
