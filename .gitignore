@@ -5,3 +5,4 @@ bot.env
 .chroma/
 chroma_logs.log
 *db/
+*tests/

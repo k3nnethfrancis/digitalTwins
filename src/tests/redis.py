@@ -94,7 +94,7 @@ embedding = OpenAIEmbeddings()
 index_name = "products"
  
 # assumes you have a redis stack server running on local host
-redis_url = "rediss://default:AVNS_kZxtp7N7f9jZuzxcI8W@twin-testing-db-do-user-13651350-0.b.db.ondigitalocean.com:25061"
+redis_url = "redis://localhost:6379"
 
 # create and load redis with documents
 vectorstore = RedisVectorStore.from_texts(
